@@ -6,3 +6,13 @@ Content-Type: application/json
 	"name":"Isaac",
 	"password": "isaac123"
 }
+
+################
+
+POST http://localhost:3000/auth/sign-in
+Content-Type: application/json
+
+{
+	"email": "isasdac@email.com",
+	"password": "isaac123"
+}
