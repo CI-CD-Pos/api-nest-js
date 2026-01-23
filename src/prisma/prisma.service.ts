@@ -7,13 +7,14 @@ import {
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from 'src/generated/prisma/client';
 import { Pool } from 'pg';
+import { env } from 'env';
 
 @Global()
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   constructor() {
     const pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
+      connectionString: env.DATABASE_URL,
     });
     const adapter = new PrismaPg(pool);
     super({ adapter });

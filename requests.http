@@ -16,3 +16,9 @@ Content-Type: application/json
 	"email": "isasdac@email.com",
 	"password": "isaac123"
 }
+
+################
+
+GET http://localhost:3000/auth/me
+
+
