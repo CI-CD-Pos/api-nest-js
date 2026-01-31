@@ -32,6 +32,7 @@ export class AuthController {
   @UseGuards(AuthGuard)
   @Get('me')
   async me(@Request() request) {
-    return request.user;
+    const user = await this.authService.me(request.user.id);
+    return user;
   }
 }
