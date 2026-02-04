@@ -11,7 +11,7 @@ import {
 import type { SignInDTO, SignUpDTO } from './dtos/auth';
 import { AuthService } from './auth.service';
 import { AuthGuard } from './auth.guard';
-import { ZodValidationPipe } from 'src/pipe/zod-validation.pipe';
+import { ZodValidationPipe } from '../pipe/zod-validation.pipe';
 import { signInSchema, signUpSchema } from './schemas/auth-schema';
 
 @Controller('auth')
