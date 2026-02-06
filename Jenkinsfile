@@ -9,6 +9,7 @@ pipeline {
   stages {
     stage('Checkout') {
       steps {
+        sh 'git config --global --add safe.directory "*"'
         checkout([
           $class: 'GitSCM',
           branches: [[name: '*/main'], [name: '*/feat/pipeline']],
