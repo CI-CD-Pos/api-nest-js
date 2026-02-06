@@ -9,7 +9,7 @@ RUN npm install -g pnpm
 # Copiar arquivos de dependências
 COPY package.json pnpm-lock.yaml ./
 
-# Instalar dependências
+# Instalar dependências (incluindo dev dependencies necessárias para o build)
 RUN pnpm install --frozen-lockfile
 
 # Copiar código fonte
@@ -18,8 +18,11 @@ COPY . .
 # Gerar Prisma Client
 RUN pnpm exec prisma generate
 
-# Build da aplicação
-RUN pnpm run build
+# Build da aplicação com verbosidade
+RUN echo "Starting build..." && pnpm run build 2>&1 || (echo "Build failed with exit code: $?"; exit 1)
+
+# Listar conteúdo de dist para debug
+RUN echo "Contents of dist directory:" && ls -la dist/ 2>&1 || echo "dist directory does not exist"
 
 # Production stage
 FROM node:22-alpine
@@ -52,4 +55,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3000', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"
 
 # Comando para iniciar a aplicação
-CMD ["node", "dist/main"]
+CMD ["node", "dist/main.js"]
