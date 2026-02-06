@@ -2,13 +2,21 @@ pipeline {
   agent any
 
   environment {
-    IMAGE = "api-nest-js-ci:latest" // TODO: Colocar a tag conforme a env variable
+    IMAGE = "api-nest-js-ci:latest"
+    GIT_REPO = "https://github.com/CI-CD-Pos/api-nest-js"
   }
 
   stages {
     stage('Checkout') {
       steps {
-        checkout scm
+        checkout([
+          $class: 'GitSCM',
+          branches: [[name: '*/main'], [name: '*/feat/pipeline']],
+          userRemoteConfigs: [[
+            url: "${GIT_REPO}",
+            credentialsId: 'github-credentials'
+          ]]
+        ])
         sh 'git rev-parse --short HEAD'
       }
     }

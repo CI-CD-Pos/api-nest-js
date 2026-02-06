@@ -32,6 +32,9 @@ importers:
       pg:
         specifier: ^8.17.2
         version: 8.17.2
+      dotenv:
+        specifier: ^17.2.3
+        version: 17.2.3
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2
