@@ -36,8 +36,41 @@ services:
       - app-network
     restart: unless-stopped
 
+  jenkins:
+      build: ./jenkins
+      container_name: jenkins-ci
+      user: root  # Necessário para acessar o docker.sock sem conflito de permissões
+      privileged: true
+      ports:
+        - "8080:8080"
+      environment:
+        DOCKER_HOST: unix:///run/user/1000/docker.sock
+        JENKINS_HOME_HOST: ./jenkins_home
+        TZ: Etc/GMT+3
+      volumes:
+        - ./jenkins_home:/var/jenkins_home
+        - /run/user/1000/docker.sock:/run/user/1000/docker.sock
+      networks:
+        - default
+        # - kind
+      restart: unless-stopped
+  sonarqube:
+    image: sonarqube:lts
+    container_name: sonarqube
+    ports:
+      - "9000:9000"
+    volumes:
+      - sonarqube-data:/opt/sonarqube/data
+      - sonarqube-extensions:/opt/sonarqube/extensions
+      - sonarqube-logs:/opt/sonarqube/logs
+    restart: unless-stopped
+
+
 volumes:
   postgres_data:
+  sonarqube-data:
+  sonarqube-extensions:
+  sonarqube-logs:
 
 networks:
   app-network:
