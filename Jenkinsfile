@@ -7,9 +7,15 @@ pipeline {
   }
 
   stages {
-    stage('Checkout') {
+
+     stage('Fix git ownership') {
       steps {
         sh 'git config --global --add safe.directory "*"'
+      }
+    }
+
+    stage('Checkout') {
+      steps {
         checkout([
           $class: 'GitSCM',
           branches: [[name: '*/main'], [name: '*/feat/pipeline']],
