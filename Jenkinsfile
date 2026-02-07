@@ -3,7 +3,7 @@ pipeline {
 
   environment {
     IMAGE = "api-nest-js-ci:latest"
-    GIT_REPO = "https://github.com/CI-CD-Pos/api-nest-js"
+    GIT_REPO = "git@github.com:CI-CD-Pos/api-nest-js.git"
   }
 
   stages {
@@ -15,7 +15,7 @@ pipeline {
           branches: [[name: '*/main'], [name: '*/feat/pipeline']],
           userRemoteConfigs: [[
             url: "${GIT_REPO}",
-            credentialsId: 'github-credentials'
+            credentialsId: 'github-ssh'
           ]]
         ])
         sh 'git rev-parse --short HEAD'
