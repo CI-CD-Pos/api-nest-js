@@ -7,11 +7,11 @@ services:
       POSTGRESQL_PASSWORD: postgres
       POSTGRESQL_DATABASE: postgres_auth
     ports:
-      - "5432:5432"
+      - '5432:5432'
     volumes:
-      - postgres_data:/bitnami/postgresql/data
+      - postgres_data:/bitnami/postgresql
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "postgres"]
+      test: ['CMD', 'pg_isready', '-U', 'postgres']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -24,7 +24,7 @@ services:
       dockerfile: Dockerfile
     container_name: nest_api_auth
     ports:
-      - "3000:3000"
+      - '3000:3000'
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/postgres_auth
       SECRET: your-secret-key-change-this
