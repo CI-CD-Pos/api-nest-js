@@ -8,12 +8,6 @@ pipeline {
 
   stages {
 
-     stage('Fix git ownership') {
-      steps {
-        sh 'git config --global --add safe.directory "*"'
-      }
-    }
-
     stage('Checkout') {
       steps {
         checkout([
