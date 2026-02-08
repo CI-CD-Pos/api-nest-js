@@ -21,7 +21,7 @@ pipeline {
         echo '=== 1/8 CHECKOUT ==='
         checkout([
           $class: 'GitSCM',
-          branches: [[name: '*/main']],
+          branches: [[name: '*/teste']],
           userRemoteConfigs: [[
             url: "${GIT_REPO}"
           ]]
@@ -112,7 +112,7 @@ pipeline {
     // =============================================
     stage('Create Git Tag') {
       when {
-        branch 'main'
+        branch 'teste'
         not { changeRequest() }
       }
       steps {
