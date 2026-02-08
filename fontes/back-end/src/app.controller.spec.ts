@@ -19,4 +19,12 @@ describe('AppController', () => {
       expect(appController.getHello()).toBe('Hello World!');
     });
   });
+
+  describe('version', () => {
+    it('should return version info', () => {
+      const result = appController.getVersion();
+      expect(result).toHaveProperty('version');
+      expect(result).toHaveProperty('timestamp');
+    });
+  });
 });

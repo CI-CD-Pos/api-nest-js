@@ -3,6 +3,7 @@
 # ========================================
 
 IMAGE ?= api-nest-ci:latest
+APP_VERSION ?= dev
 
 # ---------- Instalação de dependências ----------
 install:
@@ -30,7 +31,7 @@ sonar:
 
 # ---------- Docker build ----------
 build-docker:
-	docker build -t $(IMAGE) .
+	docker build --build-arg APP_VERSION=$(APP_VERSION) -t $(IMAGE) .
 
 # ---------- Trivy: scan do repositório (filesystem) ----------
 trivy-repo:

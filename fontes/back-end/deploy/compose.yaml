@@ -37,6 +37,7 @@ services:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/postgres_auth
       SECRET: your-secret-key-change-this
       NODE_ENV: production
+      APP_VERSION: ${TAG:-dev}
     depends_on:
       postgres:
         condition: service_healthy

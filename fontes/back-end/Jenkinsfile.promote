@@ -1,0 +1,159 @@
+// =============================================
+// Pipeline 2 — Promoção de Tags por Ambiente
+// =============================================
+// Parâmetros:
+//   TAG         — versão semântica (ex.: v1.0.10)
+//   ENVIRONMENT — ambiente destino (DEV, STG, PROD)
+//
+// Cadeia obrigatória:
+//   DEV → STG → PROD
+//   - Para promover para STG, precisa existir dev-<TAG>
+//   - Para promover para PROD, precisa existir stg-<TAG>
+//
+// Resultado:
+//   docker tag api-nest-ci:<TAG> → api-nest-ci:<env>-<TAG>
+// =============================================
+
+pipeline {
+  agent any
+
+  parameters {
+    string(
+      name: 'TAG',
+      defaultValue: '',
+      description: 'Tag de versão semântica (ex.: v1.0.10)'
+    )
+    choice(
+      name: 'ENVIRONMENT',
+      choices: ['DEV', 'STG', 'PROD'],
+      description: 'Ambiente de destino para promoção'
+    )
+  }
+
+  environment {
+    IMAGE = "api-nest-ci"
+  }
+
+  stages {
+
+    // =============================================
+    // 1. VALIDATE PARAMS — Verifica se TAG foi informada
+    // =============================================
+    stage('Validate Params') {
+      steps {
+        echo '=== 1/4 VALIDATE PARAMS ==='
+        script {
+          if (!params.TAG?.trim()) {
+            error "❌ Parâmetro TAG é obrigatório. Informe uma versão (ex.: v1.0.10)"
+          }
+          echo "📋 TAG: ${params.TAG}"
+          echo "📋 ENVIRONMENT: ${params.ENVIRONMENT}"
+          echo "📋 Imagem origem: ${IMAGE}:${params.TAG}"
+          echo "📋 Imagem destino: ${IMAGE}:${params.ENVIRONMENT.toLowerCase()}-${params.TAG}"
+        }
+      }
+    }
+
+    // =============================================
+    // 2. VALIDATE SOURCE IMAGE — Verifica se a imagem base existe
+    // =============================================
+    stage('Validate Source Image') {
+      steps {
+        echo '=== 2/4 VALIDATE SOURCE IMAGE ==='
+        script {
+          def srcImage = "${IMAGE}:${params.TAG}"
+          def exists = sh(script: "docker image inspect ${srcImage} > /dev/null 2>&1", returnStatus: true)
+          if (exists != 0) {
+            error "❌ Imagem ${srcImage} não encontrada! Execute o Pipeline CI primeiro para gerar esta versão."
+          }
+          echo "✅ Imagem ${srcImage} encontrada"
+        }
+      }
+    }
+
+    // =============================================
+    // 3. VALIDATE CHAIN — Valida cadeia DEV → STG → PROD
+    // =============================================
+    stage('Validate Chain') {
+      steps {
+        echo '=== 3/4 VALIDATE CHAIN ==='
+        script {
+          def tag = params.TAG
+          def env = params.ENVIRONMENT
+
+          if (env == 'STG') {
+            // Para STG, precisa existir dev-<TAG>
+            def devImage = "${IMAGE}:dev-${tag}"
+            def exists = sh(script: "docker image inspect ${devImage} > /dev/null 2>&1", returnStatus: true)
+            if (exists != 0) {
+              error "❌ Cadeia quebrada! Para promover para STG, a tag DEV deve existir.\n" +
+                    "   Imagem esperada: ${devImage}\n" +
+                    "   Execute primeiro: TAG=${tag}, ENVIRONMENT=DEV"
+            }
+            echo "✅ Cadeia válida: ${devImage} existe → pode promover para STG"
+          }
+
+          if (env == 'PROD') {
+            // Para PROD, precisa existir stg-<TAG>
+            def stgImage = "${IMAGE}:stg-${tag}"
+            def exists = sh(script: "docker image inspect ${stgImage} > /dev/null 2>&1", returnStatus: true)
+            if (exists != 0) {
+              error "❌ Cadeia quebrada! Para promover para PROD, a tag STG deve existir.\n" +
+                    "   Imagem esperada: ${stgImage}\n" +
+                    "   Execute primeiro: TAG=${tag}, ENVIRONMENT=STG"
+            }
+            echo "✅ Cadeia válida: ${stgImage} existe → pode promover para PROD"
+          }
+
+          if (env == 'DEV') {
+            echo "✅ DEV é o primeiro nível — sem dependência de cadeia"
+          }
+        }
+      }
+    }
+
+    // =============================================
+    // 4. PROMOTE — docker tag para o ambiente
+    // =============================================
+    stage('Promote') {
+      steps {
+        echo '=== 4/4 PROMOTE ==='
+        script {
+          def tag = params.TAG
+          def env = params.ENVIRONMENT.toLowerCase()
+          def srcImage = "${IMAGE}:${tag}"
+          def destImage = "${IMAGE}:${env}-${tag}"
+
+          sh "docker tag ${srcImage} ${destImage}"
+
+          echo "============================================"
+          echo "✅ PROMOÇÃO CONCLUÍDA COM SUCESSO!"
+          echo "============================================"
+          echo "   Origem:  ${srcImage}"
+          echo "   Destino: ${destImage}"
+          echo "   Ambiente: ${params.ENVIRONMENT}"
+          echo "============================================"
+          echo ""
+          echo "📦 Para fazer deploy manual, execute:"
+          echo "   TAG=${env}-${tag} docker compose -f deploy/compose.yaml up -d"
+          echo "============================================"
+
+          // Listar todas as tags da imagem para evidência
+          sh "docker images ${IMAGE} --format 'table {{.Repository}}\\t{{.Tag}}\\t{{.CreatedAt}}'"
+        }
+      }
+    }
+  }
+
+  post {
+    always {
+      echo '=== PIPELINE DE PROMOÇÃO FINALIZADO ==='
+    }
+    success {
+      echo "✅ Tag ${params.ENVIRONMENT.toLowerCase()}-${params.TAG} criada com sucesso!"
+    }
+    failure {
+      echo '❌ Pipeline de promoção FALHOU — verifique os logs acima.'
+    }
+  }
+}

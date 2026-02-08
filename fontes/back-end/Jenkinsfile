@@ -90,7 +90,13 @@ pipeline {
       steps {
         echo '=== 6/8 DOCKER BUILD ==='
         dir('fontes/back-end') {
-          sh "make build-docker IMAGE=${IMAGE}:${BUILD_NUMBER}"
+          script {
+            def tag = "v1.0.${BUILD_NUMBER}"
+            // Build com APP_VERSION embutido na imagem
+            sh "make build-docker IMAGE=${IMAGE}:${BUILD_NUMBER} APP_VERSION=${tag}"
+            // Tag adicional com versão semântica (para o pipeline de promoção)
+            sh "docker tag ${IMAGE}:${BUILD_NUMBER} ${IMAGE}:${tag}"
+          }
         }
       }
     }
