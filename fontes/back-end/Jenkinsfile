@@ -25,10 +25,12 @@ pipeline {
 
     stage('Test Docker Access') {
       steps {
-        sh 'id'
-        sh 'echo "DOCKER_HOST=${DOCKER_HOST:-<unset>}"'
-        sh 'ls -l /var/run/docker.sock || true'
-        sh 'docker version'
+        sh '''
+          id
+          echo "DOCKER_HOST=${DOCKER_HOST:-<unset>}"
+          test -S /var/run/docker.sock
+          docker version
+        '''
       }
     }
 
