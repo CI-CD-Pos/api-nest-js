@@ -22,7 +22,7 @@ test:
 
 # ---------- Testes com cobertura (para Sonar) ----------
 test-cov:
-	pnpm test -- --coverage --coverageReporters=lcov --coverageReporters=text
+	pnpm test:cov
 
 # ---------- SonarQube scan ----------
 sonar:
