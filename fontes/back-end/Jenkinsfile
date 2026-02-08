@@ -111,10 +111,6 @@ pipeline {
     // 8. CREATE GIT TAG — Cria tag somente na main
     // =============================================
     stage('Create Git Tag') {
-      when {
-        branch 'teste'
-        not { changeRequest() }
-      }
       steps {
         echo '=== 8/8 CREATE GIT TAG ==='
         script {
