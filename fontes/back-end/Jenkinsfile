@@ -2,7 +2,7 @@ pipeline {
   agent any
 
   environment {
-    IMAGE = "api-nest-js-ci:latest"
+    IMAGE = "api-nest-ci:latest"
     GIT_REPO = "https://github.com/CI-CD-Pos/api-nest-js.git"
   }
 
@@ -10,23 +10,24 @@ pipeline {
 
     stage('Checkout') {
       steps {
+        echo '=== STARTING CHECKOUT ==='
         checkout([
-          $class: 'GitSCM',
-          branches: [[name: '*/main'],
-          userRemoteConfigs: [[
-            url: "${GIT_REPO}",
-            credentialsId: 'github-credentials'
-          ]]
+            $class: 'GitSCM',
+            branches: [[name: '*/main']],
+            userRemoteConfigs: [[
+                url: 'https://github.com/CI-CD-Pos/api-nest-js.git'
+            ]]
         ])
-        sh 'git rev-parse --short HEAD'
-      }
+        echo '=== CHECKOUT FINISHED ==='
+           //sh 'git rev-parse --short HEAD'
+        }
     }
 
     stage('Test Docker Access') {
       steps {
         sh 'id'
         sh 'echo "DOCKER_HOST=${DOCKER_HOST:-<unset>}"'
-        sh 'ls -l /run/user/1000/docker.sock || true'
+        sh 'ls -l /var/run/docker.sock || true'
         sh 'docker version'
       }
     }
