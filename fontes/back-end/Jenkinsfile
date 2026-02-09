@@ -21,7 +21,7 @@ pipeline {
         echo '=== 1/8 CHECKOUT ==='
         checkout([
           $class: 'GitSCM',
-          branches: [[name: '*/teste']],
+          branches: [[name: '*/main']],
           userRemoteConfigs: [[
             url: "${GIT_REPO}"
           ]]
