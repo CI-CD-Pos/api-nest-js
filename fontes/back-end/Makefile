@@ -1,3 +1,5 @@
+
+
 IMAGE ?= api-nest-ci:latest
 APP_VERSION ?= dev
 
@@ -9,7 +11,7 @@ prisma-generate:
 	pnpm prisma generate
 
 build: install prisma-generate
-	pnpm bui
+	pnpm build
 test:
 	pnpm test
 
