@@ -2,60 +2,147 @@ pipeline {
   agent any
 
   environment {
-    IMAGE = "api-nest-ci:latest"
-    GIT_REPO = "https://github.com/CI-CD-Pos/api-nest-js.git"
+    IMAGE       = "api-nest-ci"
+    GIT_REPO    = "https://github.com/CI-CD-Pos/api-nest-js.git"
+    SONAR_HOST  = "http://sonarqube:9000"
+    // Configurar credencial 'sonar-token' no Jenkins (tipo Secret Text)
+    SONAR_TOKEN = credentials('sonar-token')
+    // Configurar credencial 'github-token' no Jenkins (tipo Secret Text)
+    GITHUB_TOKEN = credentials('github-token')
   }
 
   stages {
 
+    // =============================================
+    // 1. CHECKOUT — Clona o repositório do GitHub
+    // =============================================
     stage('Checkout') {
       steps {
-        echo '=== STARTING CHECKOUT ==='
+        echo '=== 1/8 CHECKOUT ==='
         checkout([
-            $class: 'GitSCM',
-            branches: [[name: '*/main']],
-            userRemoteConfigs: [[
-                url: 'https://github.com/CI-CD-Pos/api-nest-js.git'
-            ]]
+          $class: 'GitSCM',
+          branches: [[name: '*/teste']],
+          userRemoteConfigs: [[
+            url: "${GIT_REPO}"
+          ]]
         ])
-        echo '=== CHECKOUT FINISHED ==='
-           //sh 'git rev-parse --short HEAD'
-        }
-    }
-
-    stage('Test Docker Access') {
-      steps {
-        sh '''
-          id
-          echo "DOCKER_HOST=${DOCKER_HOST:-<unset>}"
-          test -S /var/run/docker.sock
-          docker version
-        '''
+        sh 'git rev-parse --short HEAD'
       }
     }
 
+    // =============================================
+    // 2. BUILD — Instala dependências + compila
+    // =============================================
     stage('Build') {
       steps {
-        sh 'make build'
+        echo '=== 2/8 BUILD ==='
+        dir('fontes/back-end') {
+          sh 'make build'
+        }
       }
     }
 
+    // =============================================
+    // 3. UNIT TESTS — Roda testes com cobertura
+    // =============================================
     stage('Unit Tests') {
       steps {
-        sh 'make test'
+        echo '=== 3/8 UNIT TESTS ==='
+        dir('fontes/back-end') {
+          sh 'make test-cov'
+        }
       }
     }
 
-    stage('Build Docker Image') {
+    // =============================================
+    // 4. SONARQUBE SCAN — Análise estática + cobertura
+    // =============================================
+    stage('SonarQube Scan') {
       steps {
-        sh 'make build-docker IMAGE=${IMAGE}'
+        echo '=== 4/8 SONARQUBE SCAN ==='
+        dir('fontes/back-end') {
+          sh """
+            sonar-scanner \
+              -Dsonar.host.url=${SONAR_HOST} \
+              -Dsonar.token=${SONAR_TOKEN} \
+              -Dsonar.qualitygate.wait=true
+          """
+        }
+      }
+    }
+
+    // =============================================
+    // 5. TRIVY REPO SCAN — Scan de vulnerabilidades no código
+    // =============================================
+    stage('Trivy Repo Scan') {
+      steps {
+        echo '=== 5/8 TRIVY REPO SCAN ==='
+        dir('fontes/back-end') {
+          sh 'make trivy-repo'
+        }
+      }
+    }
+
+    // =============================================
+    // 6. DOCKER BUILD — Constrói a imagem Docker
+    // =============================================
+    stage('Docker Build') {
+      steps {
+        echo '=== 6/8 DOCKER BUILD ==='
+        dir('fontes/back-end') {
+          script {
+            def tag = "v1.0.${BUILD_NUMBER}"
+            // Build com APP_VERSION embutido na imagem
+            sh "make build-docker IMAGE=${IMAGE}:${BUILD_NUMBER} APP_VERSION=${tag}"
+            // Tag adicional com versão semântica (para o pipeline de promoção)
+            sh "docker tag ${IMAGE}:${BUILD_NUMBER} ${IMAGE}:${tag}"
+          }
+        }
+      }
+    }
+
+    // =============================================
+    // 7. TRIVY IMAGE SCAN — Scan de vulnerabilidades na imagem
+    // =============================================
+    stage('Trivy Image Scan') {
+      steps {
+        echo '=== 7/8 TRIVY IMAGE SCAN ==='
+        dir('fontes/back-end') {
+          sh "make trivy-image IMAGE=${IMAGE}:${BUILD_NUMBER}"
+        }
+      }
+    }
+
+    // =============================================
+    // 8. CREATE GIT TAG — Cria tag somente na main
+    // =============================================
+    stage('Create Git Tag') {
+      steps {
+        echo '=== 8/8 CREATE GIT TAG ==='
+        script {
+          def tag = "v1.0.${BUILD_NUMBER}"
+          sh """
+            git config user.email "jenkins@ci.local"
+            git config user.name "Jenkins CI"
+            git tag -a ${tag} -m "Release ${tag} - Build #${BUILD_NUMBER}"
+            git push https://${GITHUB_TOKEN}@github.com/CI-CD-Pos/api-nest-js.git ${tag}
+          """
+          echo "Tag ${tag} criada e enviada para o GitHub"
+        }
       }
     }
   }
 
   post {
     always {
-      sh 'docker images | head -n 20 || true'
+      echo '=== PIPELINE FINALIZADO ==='
+      sh 'docker images | grep api-nest-ci || true'
+    }
+    success {
+      echo '✅ Pipeline executado com SUCESSO!'
+    }
+    failure {
+      echo '❌ Pipeline FALHOU — verifique os logs acima.'
     }
   }
 }

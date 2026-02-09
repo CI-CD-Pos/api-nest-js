@@ -1,0 +1,53 @@
+# ========================================
+# Deploy Compose — Usado para deploy MANUAL
+# ========================================
+# Uso:
+#   TAG=v1.0.5 docker compose -f deploy/compose.yaml up -d
+#
+# Para parar:
+#   docker compose -f deploy/compose.yaml down
+# ========================================
+
+services:
+  postgres:
+    image: bitnami/postgresql:latest
+    container_name: postgres_db_auth_deploy
+    environment:
+      POSTGRESQL_USERNAME: postgres
+      POSTGRESQL_PASSWORD: postgres
+      POSTGRESQL_DATABASE: postgres_auth
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_deploy_data:/bitnami/postgresql
+    healthcheck:
+      test: ['CMD', 'pg_isready', '-U', 'postgres']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - deploy-network
+
+  api:
+    image: api-nest-ci:${TAG:-latest}
+    container_name: nest_api_auth_deploy
+    ports:
+      - '3000:3000'
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/postgres_auth
+      SECRET: your-secret-key-change-this
+      NODE_ENV: production
+      APP_VERSION: ${TAG:-dev}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - deploy-network
+    restart: unless-stopped
+
+volumes:
+  postgres_deploy_data:
+
+networks:
+  deploy-network:
+    driver: bridge

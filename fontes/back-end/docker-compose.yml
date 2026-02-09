@@ -41,29 +41,35 @@ services:
     container_name: jenkins-ci
     user: root
     ports:
-      - "8080:8080"
-      - "50000:50000"
+      - '8080:8080'
+      - '50000:50000'
     environment:
       TZ: Etc/GMT+3
     volumes:
-      - ./jenkins_home:/var/jenkins_home
+      - jenkins_home:/var/jenkins_home
       - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - app-network
     restart: unless-stopped
 
   sonarqube:
     image: sonarqube:lts
     container_name: sonarqube
     ports:
-      - "9000:9000"
+      - '9000:9000'
+    environment:
+      - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
     volumes:
       - sonarqube-data:/opt/sonarqube/data
       - sonarqube-extensions:/opt/sonarqube/extensions
       - sonarqube-logs:/opt/sonarqube/logs
+    networks:
+      - app-network
     restart: unless-stopped
-
 
 volumes:
   postgres_data:
+  jenkins_home:
   sonarqube-data:
   sonarqube-extensions:
   sonarqube-logs:

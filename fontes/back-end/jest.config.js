@@ -13,8 +13,14 @@ module.exports = {
       },
     ],
   },
-  collectCoverageFrom: ['**/*.(t|j)s'],
+  collectCoverageFrom: [
+    '**/*.(t|j)s',
+    '!**/generated/**',
+    '!**/node_modules/**',
+    '!main.ts',
+  ],
   coverageDirectory: '../coverage',
+  coverageReporters: ['text', 'lcov', 'clover'],
   testEnvironment: 'node',
   moduleNameMapper: {
     '^src/(.*)$': '<rootDir>/$1',

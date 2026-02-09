@@ -9,4 +9,12 @@ export class AppController {
   getHello(): string {
     return this.appService.getHello();
   }
+
+  @Get('version')
+  getVersion() {
+    return {
+      version: process.env.APP_VERSION || 'dev',
+      timestamp: new Date().toISOString(),
+    };
+  }
 }
