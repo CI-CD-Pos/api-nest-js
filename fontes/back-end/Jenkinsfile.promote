@@ -1,19 +1,3 @@
-// =============================================
-// Pipeline 2 — Promoção de Tags por Ambiente
-// =============================================
-// Parâmetros:
-//   TAG         — versão semântica (ex.: v1.0.10)
-//   ENVIRONMENT — ambiente destino (DEV, STG, PROD)
-//
-// Cadeia obrigatória:
-//   DEV → STG → PROD
-//   - Para promover para STG, precisa existir dev-<TAG>
-//   - Para promover para PROD, precisa existir stg-<TAG>
-//
-// Resultado:
-//   docker tag api-nest-ci:<TAG> → api-nest-ci:<env>-<TAG>
-// =============================================
-
 pipeline {
   agent any
 
@@ -36,9 +20,7 @@ pipeline {
 
   stages {
 
-    // =============================================
-    // 1. VALIDATE PARAMS — Verifica se TAG foi informada
-    // =============================================
+   
     stage('Validate Params') {
       steps {
         echo '=== 1/4 VALIDATE PARAMS ==='
@@ -54,9 +36,6 @@ pipeline {
       }
     }
 
-    // =============================================
-    // 2. VALIDATE SOURCE IMAGE — Verifica se a imagem base existe
-    // =============================================
     stage('Validate Source Image') {
       steps {
         echo '=== 2/4 VALIDATE SOURCE IMAGE ==='
@@ -70,10 +49,6 @@ pipeline {
         }
       }
     }
-
-    // =============================================
-    // 3. VALIDATE CHAIN — Valida cadeia DEV → STG → PROD
-    // =============================================
     stage('Validate Chain') {
       steps {
         echo '=== 3/4 VALIDATE CHAIN ==='
@@ -82,7 +57,7 @@ pipeline {
           def env = params.ENVIRONMENT
 
           if (env == 'STG') {
-            // Para STG, precisa existir dev-<TAG>
+           
             def devImage = "${IMAGE}:dev-${tag}"
             def exists = sh(script: "docker image inspect ${devImage} > /dev/null 2>&1", returnStatus: true)
             if (exists != 0) {
@@ -94,7 +69,7 @@ pipeline {
           }
 
           if (env == 'PROD') {
-            // Para PROD, precisa existir stg-<TAG>
+         
             def stgImage = "${IMAGE}:stg-${tag}"
             def exists = sh(script: "docker image inspect ${stgImage} > /dev/null 2>&1", returnStatus: true)
             if (exists != 0) {
@@ -112,9 +87,7 @@ pipeline {
       }
     }
 
-    // =============================================
-    // 4. PROMOTE — docker tag para o ambiente
-    // =============================================
+  
     stage('Promote') {
       steps {
         echo '=== 4/4 PROMOTE ==='
@@ -138,7 +111,6 @@ pipeline {
           echo "   TAG=${env}-${tag} docker compose -f deploy/compose.yaml up -d"
           echo "============================================"
 
-          // Listar todas as tags da imagem para evidência
           sh "docker images ${IMAGE} --format 'table {{.Repository}}\\t{{.Tag}}\\t{{.CreatedAt}}'"
         }
       }

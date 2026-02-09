@@ -1,12 +1,3 @@
-# ========================================
-# Deploy Compose — Usado para deploy MANUAL
-# ========================================
-# Uso:
-#   TAG=v1.0.5 docker compose -f deploy/compose.yaml up -d
-#
-# Para parar:
-#   docker compose -f deploy/compose.yaml down
-# ========================================
 
 services:
   postgres:

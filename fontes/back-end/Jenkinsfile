@@ -5,17 +5,14 @@ pipeline {
     IMAGE       = "api-nest-ci"
     GIT_REPO    = "https://github.com/CI-CD-Pos/api-nest-js.git"
     SONAR_HOST  = "http://sonarqube:9000"
-    // Configurar credencial 'sonar-token' no Jenkins (tipo Secret Text)
+
     SONAR_TOKEN = credentials('sonar-token')
-    // Configurar credencial 'github-token' no Jenkins (tipo Secret Text)
+    
     GITHUB_TOKEN = credentials('github-token')
   }
 
   stages {
 
-    // =============================================
-    // 1. CHECKOUT — Clona o repositório do GitHub
-    // =============================================
     stage('Checkout') {
       steps {
         echo '=== 1/8 CHECKOUT ==='
@@ -30,9 +27,7 @@ pipeline {
       }
     }
 
-    // =============================================
-    // 2. BUILD — Instala dependências + compila
-    // =============================================
+
     stage('Build') {
       steps {
         echo '=== 2/8 BUILD ==='
@@ -41,10 +36,6 @@ pipeline {
         }
       }
     }
-
-    // =============================================
-    // 3. UNIT TESTS — Roda testes com cobertura
-    // =============================================
     stage('Unit Tests') {
       steps {
         echo '=== 3/8 UNIT TESTS ==='
@@ -54,9 +45,6 @@ pipeline {
       }
     }
 
-    // =============================================
-    // 4. SONARQUBE SCAN — Análise estática + cobertura
-    // =============================================
     stage('SonarQube Scan') {
       steps {
         echo '=== 4/8 SONARQUBE SCAN ==='
@@ -71,9 +59,7 @@ pipeline {
       }
     }
 
-    // =============================================
-    // 5. TRIVY REPO SCAN — Scan de vulnerabilidades no código
-    // =============================================
+   
     stage('Trivy Repo Scan') {
       steps {
         echo '=== 5/8 TRIVY REPO SCAN ==='
@@ -83,27 +69,23 @@ pipeline {
       }
     }
 
-    // =============================================
-    // 6. DOCKER BUILD — Constrói a imagem Docker
-    // =============================================
+    
     stage('Docker Build') {
       steps {
         echo '=== 6/8 DOCKER BUILD ==='
         dir('fontes/back-end') {
           script {
             def tag = "v1.0.${BUILD_NUMBER}"
-            // Build com APP_VERSION embutido na imagem
+          
             sh "make build-docker IMAGE=${IMAGE}:${BUILD_NUMBER} APP_VERSION=${tag}"
-            // Tag adicional com versão semântica (para o pipeline de promoção)
+            
             sh "docker tag ${IMAGE}:${BUILD_NUMBER} ${IMAGE}:${tag}"
           }
         }
       }
     }
 
-    // =============================================
-    // 7. TRIVY IMAGE SCAN — Scan de vulnerabilidades na imagem
-    // =============================================
+
     stage('Trivy Image Scan') {
       steps {
         echo '=== 7/8 TRIVY IMAGE SCAN ==='
@@ -113,9 +95,7 @@ pipeline {
       }
     }
 
-    // =============================================
-    // 8. CREATE GIT TAG — Cria tag somente na main
-    // =============================================
+
     stage('Create Git Tag') {
       steps {
         echo '=== 8/8 CREATE GIT TAG ==='
